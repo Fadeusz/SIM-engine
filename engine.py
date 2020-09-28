@@ -6,6 +6,7 @@ import time,sys
 import re
 import binascii
 import threading
+import os
 
 SERIAL_PORT = "/dev/ttyS0"
 
@@ -26,7 +27,7 @@ SendLine("AT+CLIP=1") #Caller info
 SendLine("AT+CNMI=1,2,0,0,0") #show the content of the incoming message
 SendLine('AT+CSCS="UCS2"') #encoding the message to UCS2  ##If it is turned off and the message comes with a sign from off-pallets - it encodes anyway. It is better to make sure that it always encodes.
 SendLine("AT+CMGF=1")
-#SendLine("AT+CSAS=0") # for CSMP work...s
+SendLine("AT+CSAS=0") # for CSMP work...s
 SendLine("AT+CSMP=17,167,2,25") #utf8 etc...
 
 #Configure GPS
@@ -39,6 +40,10 @@ SendLine("AT+CGPSRST=0")
 
 time.sleep(5)
 print "Engine is READY"
+
+def play(s):
+	os.system("pkill omxplayer")
+	return os.system("omxplayer " + s + ".mp3")
 
 def utf16_encode(text):
 	return binascii.hexlify(text.encode('utf-16-be'))
@@ -128,6 +133,7 @@ class GPS:
 
 def ReadSerial(s):
 	global Current_Caller
+	global Conversation_Progress
 
 	print "READ:"
 
@@ -154,12 +160,18 @@ def ReadSerial(s):
 			l = line.split('"')
 			Current_Caller = l[1]
 			print "Nawiazono polaczenie z: " + Current_Caller
+			Conversation_Progress = 0
+			time.sleep(5)
+			play("powitanie")
 		elif line.startswith("NO CARRIER"):
 			print " ------> Rozmowa zakonczona z numerem: " + Current_Caller
 			Current_Caller = 0
 		elif line.startswith("+DTMF:"):
 			tone = int(line.split(": ")[1])
 			print "TONE DIALLING: [" + Current_Caller + "] - [" + str(tone) + "]"
+			if tone == 1 and Conversation_Progress == 0:
+				play("1_0")
+				SendLine("ATH")
 
 
 		else:
