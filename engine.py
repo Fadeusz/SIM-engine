@@ -7,6 +7,7 @@ import re
 import binascii
 import threading
 import os
+from io import BytesIO
 
 SERIAL_PORT = "/dev/ttyS0"
 
@@ -31,11 +32,14 @@ SendLine("AT+CSAS=0") # for CSMP work...s
 SendLine("AT+CSMP=17,167,2,25") #utf8 etc...
 
 #Configure GPS
-SendLine("AT+CGNSPWR=1")
-SendLine("AT+CGATT=1")
-SendLine('AT+SAPBR=3,1,"CONTYPE","GPRS"')
-SendLine('AT+CGNSSEQ="RMC"')
-SendLine("AT+CGPSRST=0")
+#SendLine("AT+CGNSPWR=1")
+#SendLine("AT+CGATT=1")
+#SendLine('AT+SAPBR=3,1,"CONTYPE","GPRS"')
+#SendLine('AT+CGNSSEQ="RMC"')
+#SendLine("AT+CGPSRST=0")
+
+
+
 
 
 time.sleep(5)
@@ -107,7 +111,57 @@ class SMS_Received:
 			GPS.awaiting_location_list.append(self.number)
 			SendLine("AT+CGNSINF")
 		elif self.msg.startswith("#pl"): SMS_Send.add_to_queue(self.number, u"Zażółć gęślą jaźń")
-		elif self.msg.startswith("#"): SMS_Send.add_to_queue(self.number, "Undefined Command")
+		#elif self.msg.startswith("#"): SMS_Send.add_to_queue(self.number, "Undefined Command")
+		elif self.msg.startswith("#mms"): 
+			#f = open("example-stamp-260nw-426673501.jpg", "rb")
+			#img = f.read()
+			#data = img.encode('hex')
+			#data = " ".join([data[i:i+2] for i in range(0, len(data), 2)])
+			#print str(len(img))
+			SendLine("AT+CMMSTERM")
+			
+			time.sleep(2)
+			SendLine('AT+CMMSINIT')
+			time.sleep(2)
+			SendLine('AT+CMMSCURL="mms.orange.pl"')
+			time.sleep(2)
+			SendLine('AT+CMMSCID=1')
+			time.sleep(2)
+			SendLine('AT+CMMSPROTO="192.168.6.104",8080')
+			time.sleep(2)
+			SendLine('AT+SAPBR=3,1,"Contype","GPRS"')
+			time.sleep(2)
+			SendLine('AT+SAPBR=3,1,"APN","mms"')
+			time.sleep(2)
+			SendLine('AT+SAPBR=1,1')
+			time.sleep(2)
+			SendLine("AT+CMMSEDIT=1")
+			time.sleep(2)
+
+			f = open("Thumbnail-First-Draft-Coffee-Wine-20191013_121143t-200x200.jpg", "rb")
+			data12 = f.read()
+			SendLine('AT+CMMSDOWN="PIC",' + str(len(data12)) + ',307200,"example.jpg"') #307200 - max await time
+			time.sleep(1)
+			#for x in data12:
+				#ser.write(x)
+			ser.write(data12)
+
+			time.sleep(5)
+			#time.sleep(20)
+			#SendLine('AT+CMMSDOWN="TITLE",3,5000')
+			#ser.write("123")
+			SendLine('AT+CMMSRECP="884167733"')
+			time.sleep(2)
+			SendLine('AT+CMMSSEND')
+			time.sleep(2)
+			SendLine("AT+CMMSVIEW")
+			time.sleep(2)
+			SendLine("AT+CMMSEDIT=0")
+			time.sleep(2)
+			SendLine("AT+CMMSVIEW")
+			time.sleep(2)
+			SendLine("AT+CMMSTERM")
+
 
 
 class GPS:
@@ -161,7 +215,7 @@ def ReadSerial(s):
 			Current_Caller = l[1]
 			print "Nawiazono polaczenie z: " + Current_Caller
 			Conversation_Progress = 0
-			time.sleep(5)
+			time.sleep(4)
 			play("powitanie")
 		elif line.startswith("NO CARRIER"):
 			print " ------> Rozmowa zakonczona z numerem: " + Current_Caller
@@ -191,9 +245,9 @@ while 1:
 		ch = ser.read();
 		if ch == "" or ch == "\n\n":
 			if s != "":
-				#ReadSerial(s)
-				thr = threading.Thread(target=ReadSerial, args=(s,))
-				thr.start()
+				ReadSerial(s)
+				#thr = threading.Thread(target=ReadSerial, args=(s,))
+				#thr.start()
 			break
 
 		s = s + ch
