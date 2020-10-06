@@ -8,20 +8,37 @@ import binascii
 import threading
 import os
 from io import BytesIO
+import ConfigParser
 
 SERIAL_PORT = "/dev/ttyS0"
 
 ser = serial.Serial(SERIAL_PORT, baudrate = 9600, timeout = 0.5)
 
 
-def SendLine(line):
+class Config:
+	file
+	def __init__(self):
+		self.file = ConfigParser.RawConfigParser()
+		self.file.read("config.ini")
+
+def SendLine(line, wait = True):
 	ser.write(line + "\r")
+	if(wait == True):
+		s = ""
+		while 1:
+			ch = ser.read();
+			if ch == "" or ch == "\n\n":
+				break
+			s = s + ch
+		print s
+		#TODO: Zapisywac to co sie tu wypisze jako listy danych a potem te listy czytac jako piorytet podczas sprwadzania nowych danych w petli
+		#CEL ^ zeby podczas zbierania informacji tutuaj typu "OK" nie przyszedl miedzyczasie jakis np SMS, z ktorym nic sie nie zrobi
 
 print "Configuration is in progress"
 
 SendLine("AT") #Connect
 
-SendLine("ATS0=1") #Automatic connection reception
+SendLine("ATS0=0") #Automatic connection reception - FALSE
 SendLine("AT+DDET=1,100,0,0") #Tone Dialling
 SendLine("AT+CRSL=0") #Call volume 0
 SendLine("AT+CLIP=1") #Caller info
@@ -31,18 +48,16 @@ SendLine("AT+CMGF=1")
 SendLine("AT+CSAS=0") # for CSMP work...s
 SendLine("AT+CSMP=17,167,2,25") #utf8 etc...
 
+SendLine("AT+CUSD=1") #card  operator message
+
 #Configure GPS
-#SendLine("AT+CGNSPWR=1")
-#SendLine("AT+CGATT=1")
-#SendLine('AT+SAPBR=3,1,"CONTYPE","GPRS"')
-#SendLine('AT+CGNSSEQ="RMC"')
-#SendLine("AT+CGPSRST=0")
+SendLine("AT+CGNSPWR=1")
+SendLine("AT+CGATT=1")
+SendLine('AT+SAPBR=3,1,"CONTYPE","GPRS"')
+SendLine('AT+CGNSSEQ="RMC"')
+SendLine("AT+CGPSRST=0")
 
 
-
-
-
-time.sleep(5)
 print "Engine is READY"
 
 def play(s):
@@ -51,6 +66,106 @@ def play(s):
 
 def utf16_encode(text):
 	return binascii.hexlify(text.encode('utf-16-be'))
+
+def utf16_decode(text):
+	return binascii.unhexlify(text).decode('utf-16-be')
+
+
+class USSD:
+
+	queue = []
+
+	principal = ""
+
+	@staticmethod
+	def Send(number, code):
+		conf = Config()
+		numbers = conf.file.get("USSD", "admin").split(",")
+		if number in numbers:
+			if USSD.principal == "":
+				USSD.principal = number
+				SendLine(bytes(u"ATD" + code + ";"))
+			else:
+				USSD.queue.append([number, code])
+		else:
+			SMS_Send.add_to_queue(number, "USSD: Access Denied")
+
+	@staticmethod
+	def Get(line):
+		if '"' in line:
+			msg = line.split('"')[1]
+			message = utf16_decode(msg)
+			SMS_Send.add_to_queue(USSD.principal, "USSD Code: \n--------\n" + message)
+			USSD.principal = ""
+			if len(USSD.queue) > 0:
+				q = USSD.queue.pop(0)
+				USSD.Send(q[0], q[1])
+		else:
+			print "E1"
+
+
+
+class MMS_Send:
+	@staticmethod
+	def Send(number, att):
+		SendLine('AT+CMMSINIT')
+		time.sleep(1)
+		SendLine('AT+CMMSCURL="mms.orange.pl"')
+		time.sleep(1)
+		SendLine('AT+CMMSCID=1')
+		time.sleep(1)
+		SendLine('AT+CMMSPROTO="192.168.6.104",8080')
+		time.sleep(1)
+		SendLine('AT+SAPBR=3,1,"Contype","GPRS"')
+		time.sleep(1)
+		SendLine('AT+SAPBR=3,1,"APN","mms"')
+		time.sleep(1)
+		SendLine('AT+SAPBR=1,1')
+		time.sleep(1)
+		SendLine("AT+CMMSEDIT=1")
+		time.sleep(1)
+
+		t = type(att).__name__
+		if t == "str": att = [att]
+
+		while att:
+			f = open(att.pop(0), "rb")
+			data12 = f.read()
+			SendLine('AT+CMMSDOWN="PIC",' + str(len(data12)) + ',307200,"LCI-'+str(int(time.time()))+'.jpg"') #307200 - max await time
+			#for x in data12:
+				#ser.write(x)
+			time.sleep(2)
+			ser.write(data12)
+
+			time.sleep(3)
+
+		
+		#SendLine('AT+CMMSDOWN="TITLE",3,5000')
+		#ser.write("123")
+		SendLine(bytes(u'AT+CMMSRECP="'+number+'"'))
+		time.sleep(1)
+		SendLine('AT+CMMSSEND')
+		time.sleep(1)
+		SendLine("AT+CMMSVIEW")
+		time.sleep(1)
+		SendLine("AT+CMMSEDIT=0")
+		time.sleep(1)
+		SendLine("AT+CMMSVIEW")
+		time.sleep(1)
+		SendLine("AT+CMMSTERM")
+
+	queue = []
+
+	@staticmethod
+	def add_to_queue(number, attach):
+		MMS_Send.queue.append([number, attach])
+
+	@staticmethod
+	def send_first():
+		ar = MMS_Send.queue.pop(0)
+		MMS_Send.Send(ar[0], ar[1])
+
+
 
 class SMS_Send:
 
@@ -109,58 +224,14 @@ class SMS_Received:
 	def manager(self):
 		if self.msg.startswith("#location"):
 			GPS.awaiting_location_list.append(self.number)
-			SendLine("AT+CGNSINF")
+			SendLine("AT+CGNSINF", False)
 		elif self.msg.startswith("#pl"): SMS_Send.add_to_queue(self.number, u"Zażółć gęślą jaźń")
 		#elif self.msg.startswith("#"): SMS_Send.add_to_queue(self.number, "Undefined Command")
-		elif self.msg.startswith("#mms"): 
-			#f = open("example-stamp-260nw-426673501.jpg", "rb")
-			#img = f.read()
-			#data = img.encode('hex')
-			#data = " ".join([data[i:i+2] for i in range(0, len(data), 2)])
-			#print str(len(img))
-			SendLine("AT+CMMSTERM")
-			
-			time.sleep(2)
-			SendLine('AT+CMMSINIT')
-			time.sleep(2)
-			SendLine('AT+CMMSCURL="mms.orange.pl"')
-			time.sleep(2)
-			SendLine('AT+CMMSCID=1')
-			time.sleep(2)
-			SendLine('AT+CMMSPROTO="192.168.6.104",8080')
-			time.sleep(2)
-			SendLine('AT+SAPBR=3,1,"Contype","GPRS"')
-			time.sleep(2)
-			SendLine('AT+SAPBR=3,1,"APN","mms"')
-			time.sleep(2)
-			SendLine('AT+SAPBR=1,1')
-			time.sleep(2)
-			SendLine("AT+CMMSEDIT=1")
-			time.sleep(2)
-
-			f = open("Thumbnail-First-Draft-Coffee-Wine-20191013_121143t-200x200.jpg", "rb")
-			data12 = f.read()
-			SendLine('AT+CMMSDOWN="PIC",' + str(len(data12)) + ',307200,"example.jpg"') #307200 - max await time
-			time.sleep(1)
-			#for x in data12:
-				#ser.write(x)
-			ser.write(data12)
-
+		elif self.msg.startswith("#ussd"):
 			time.sleep(5)
-			#time.sleep(20)
-			#SendLine('AT+CMMSDOWN="TITLE",3,5000')
-			#ser.write("123")
-			SendLine('AT+CMMSRECP="884167733"')
-			time.sleep(2)
-			SendLine('AT+CMMSSEND')
-			time.sleep(2)
-			SendLine("AT+CMMSVIEW")
-			time.sleep(2)
-			SendLine("AT+CMMSEDIT=0")
-			time.sleep(2)
-			SendLine("AT+CMMSVIEW")
-			time.sleep(2)
-			SendLine("AT+CMMSTERM")
+			USSD.Send(self.number, self.msg.split(" ")[1])
+		elif self.msg.startswith("#mms"):
+			MMS_Send.add_to_queue(self.number, ["fff.jpg"])
 
 
 
@@ -202,11 +273,18 @@ def ReadSerial(s):
 		line = lines.pop(0)
 		print "Line: " + line
 
-		if line.startswith("+CGNSINF:"):
-			print "GPS:"
-			GPS.do_list(line)
-		elif line.startswith("+CMT:"):
-			Received_SMS = SMS_Received(line)
+		#GPS DATA
+		if line.startswith("+CGNSINF:"): GPS.do_list(line)
+
+
+		#READ SMS
+		elif line.startswith("+CMT:"): Received_SMS = SMS_Received(line)
+
+
+		#SIM OPERATOR CODE
+		elif line.startswith("+CUSD:"): USSD.Get(line)
+			
+			
 
 
 		#CALL
@@ -214,8 +292,9 @@ def ReadSerial(s):
 			l = line.split('"')
 			Current_Caller = l[1]
 			print "Nawiazono polaczenie z: " + Current_Caller
+			SendLine("ATA")
 			Conversation_Progress = 0
-			time.sleep(4)
+			time.sleep(1)
 			play("powitanie")
 		elif line.startswith("NO CARRIER"):
 			print " ------> Rozmowa zakonczona z numerem: " + Current_Caller
@@ -241,13 +320,16 @@ while 1:
 	if len(SMS_Send.queue) > 0:
 		SMS_Send.send_first()
 
+	if len(MMS_Send.queue) > 0:
+		MMS_Send.send_first()
+
 	while 1:
 		ch = ser.read();
 		if ch == "" or ch == "\n\n":
 			if s != "":
-				ReadSerial(s)
-				#thr = threading.Thread(target=ReadSerial, args=(s,))
-				#thr.start()
+				#ReadSerial(s)
+				thr = threading.Thread(target=ReadSerial, args=(s,))
+				thr.start()
 			break
 
 		s = s + ch
