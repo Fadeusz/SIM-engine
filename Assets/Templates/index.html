@@ -1,0 +1,34 @@
+{% include 'Includes/head.html' %}
+	<script type="text/javascript" src="/main.js"></script>
+
+  <div class="module">
+    <h1>SIM Gateway (Beta)</h1>
+    Your connection status with the controller: <span id="status">...</span>
+    <a  class="a-btn" href="/configure_controller"><button class="btn btn-block btn-primary"><h3>Controller Configuration</h3></button></a>
+    	
+    <br><br>
+
+    <a  class="a-btn" href="/send_sms"><button class="btn btn-block btn-primary">Easy Send SMS</button></a>
+    <a  class="a-btn" href="/send_mms"><button class="btn btn-block btn-primary">Easy Send MMS</button></a>
+
+    <script>
+    	ajax('/get_controller_status', function(r) {
+    		var el = document.getElementById("status");
+            if(r == "2") {
+                el.textContent = "Connected with Socket"
+                el.style.color = "lime"
+            } else if(r == "1") {
+				el.textContent = "Logging successful"
+				el.style.color = "lime"
+			} else if(r == "12") {
+                el.textContent = "Pending"
+                el.style.color = "orange"
+            } else {
+				el.textContent = "Failed"
+				el.style.color = "red"
+			}
+    	})
+    </script>
+
+  </div>
+{% include 'Includes/footer.html' %}

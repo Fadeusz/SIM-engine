@@ -1,0 +1,30 @@
+{% include 'Includes/head.html' %}
+	
+	<script type="text/javascript" src="/main.js"></script>
+
+  <div class="module">
+    <h1>Controller is in the process of configuration, please wait... :)</h1>
+    <div id="status"></div>
+    <!--<button onclick="history.back(-1)" class="btn btn-block btn-primary">Go Back</button>-->
+
+	<script>
+
+		ajax('/set_controller_configuration', function(r) {
+			var el = document.getElementById("status");
+			if(r == "True") {
+				el.textContent = "Connected to Controller"
+				el.style.color = "lime"
+			} else {
+				el.textContent = "Connect Failed"
+				el.style.color = "red"
+			}
+
+			setTimeout(function(){location.href = '/'}, 3000)
+
+		})
+
+		
+    </script>
+
+  </div>
+{% include 'Includes/footer.html' %}

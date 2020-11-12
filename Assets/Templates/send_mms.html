@@ -1,0 +1,12 @@
+{% include 'Includes/head.html' %}
+  <div class="module">
+    <h1>Easy Send MMS</h1>
+    
+    <form class="form" action="send_mms" method="post" enctype="multipart/form-data" autocomplete="off">
+      <div class="alert alert-error"></div>
+      <input type="text" placeholder="Number" name="number" required />
+      <div class="avatar"><label>Select image: </label><input type="file" name="image" accept="image/*" required /></div>
+      <input type="submit" value="Send" name="register" class="btn btn-block btn-primary" />
+    </form>
+  </div>
+{% include 'Includes/footer.html' %}
