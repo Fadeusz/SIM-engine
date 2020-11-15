@@ -8,8 +8,10 @@ from App.Audio import play
 from App.Config import ToneDialing
 import App.Config
 from App.WebSocket import WebSocketClient_Send
+from App.MMS_Received import MMS_Received
+
 Received_SMS = False
-Check_MMS = False
+Received_MMS = False
 
 import re
 import PIL.Image as Image
@@ -18,9 +20,9 @@ from io import StringIO
 def ReadSerial(s):
 	global Conversation_Progress
 	global Received_SMS
-	global Check_MMS
+	global Received_MMS
 
-	#print("READ:")
+	print("READ:" + s)
 
 	#def ProcessData():
 		#if Received_SMS and Received_SMS.inProgress: Received_SMS.make()
@@ -43,9 +45,10 @@ def ReadSerial(s):
 		#SIM OPERATOR CODE
 		elif line.startswith("+CUSD:"): USSD.Get(line)
 			
-		
+		#informacja o wyslanym sms
 		elif line.startswith("+CMGS:"): WebSocketClient_Send({"action":"addNotification", "log":"smsSent", "level": "2"})
 
+		#przyszedl nowy mms lub sms
 		elif line.startswith("+CMTI:"):
 			l = line.split(",")
 			
@@ -61,8 +64,7 @@ def ReadSerial(s):
 
 
 		elif line.startswith("+CMMSRECV:"):
-			print("Sprawdzam zalaczniki MMSA....")
-			Check_MMS = True
+			Received_MMS = MMS_Received(line)
 
 		#CALL
 		elif line.startswith("+CLIP:"):
@@ -75,45 +77,34 @@ def ReadSerial(s):
 			ToneDialing.Reset()
 			ToneDialing.Run()
 
-			#Conversation_Progress = 0
-			#time.sleep(1)
-			#play("powitanie")
+		#end call
 		elif line.startswith("NO CARRIER"):
 			print(" ------> Rozmowa zakonczona z numerem: " + App.Config.Current_Caller)
 			App.Config.Current_Caller = 0
 			if App.Config.Micro.stopped == False:
 				WebSocketClient_Send({"action":"TerminateConversation"})
 			App.Config.Micro.stop();
+
+		#select tone dial
+		#TODO
+		#tutaj raczej trzeba dolozyc tworzenie nowego watku, o ile ReadSerial nie jest juz nowym watkiem
 		elif line.startswith("+DTMF:"):
 			tone = int(line.split(": ")[1])
 			print("TONE DIALLING: [" + App.Config.Current_Caller + "] - [" + str(tone) + "]")
 			ToneDialing.Click(str(tone))
-			#if tone == 1 and Conversation_Progress == 0:
-				#play("1_0")
-				#SendLine("ATH", False)
-
 
 		else:
 			if Received_SMS != False and Received_SMS.inProgress: 
 				Received_SMS.add_line(line)
 				Received_SMS.make()
 
-			elif Check_MMS != False:
+			elif Received_MMS != False:
 				pattern = re.compile('^\d+,"[^"]{0,}",\d+,\d+[\n\r]*$')
 				if pattern.match(line):
-					print("MMS LINE: " + line)
-					l = line.split(",")
-					if(l[1] != '""'):
-						print("Saving MMS image...")
-						img = SendLine("AT+CMMSREAD=" + l[0], arrBytes=True)
-						newFile = open("Data/test2.jpg", "wb")
-						newFile.write(img)
-						print("MMS saved.")
-					else:
-						print("EMPTY MMS!!!!!!!!!!")
+					Received_MMS.add_file(line)
 				else:
-					print("its not mms line!")
-					Check_MMS = False
+					#print("its not mms line!")
+					Received_MMS = False
 
 			#else:
 				#print("Loop ELSE '"+line+"'")

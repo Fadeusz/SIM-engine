@@ -26,6 +26,9 @@ class Init:
 
 		SendLine("AT+CMEE=2") #show errors
 
+
+		SendLine('AT+CMGDA="DEL ALL"')
+
 		App.Config.SN = SendLine("AT+GSN", onlyFirstLine=True)
 
 		print("SN: " + App.Config.SN)
@@ -82,4 +85,5 @@ class Init:
 			print("Tone Dialing Ready!")
 		except:
 			print("[!] Tone Dialing: Wrong Data")
+
 		

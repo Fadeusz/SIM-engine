@@ -6,6 +6,7 @@ from App.MMS_Send import MMS_Send
 from App.GPS import GPS
 from App.Connection import SendLine
 from App.USSD import USSD
+import App.Config
 
 class SMS_Received:
 	inProgress = True
@@ -19,7 +20,7 @@ class SMS_Received:
 		#// +CMT: "+48884167733","","20/09/22,23:12:27+08"
 		data = line.split('"')
 		self.number = UTF16.decode(data[3].strip())
-		self.date = data[7]
+		self.date = data[7].replace("'", "")
 	def add_line(self, line):
 		print("SMS LINE: " + line)
 		self.msg += UTF16.decode(line.strip())
@@ -35,13 +36,16 @@ class SMS_Received:
 		#SendLine("AT+CGNSINF")
 		#SMS_Send.Send(self.number, self.msg);
 
-		fn = self.date.replace("/","-").replace(":", "-") + "___" + str(time.time())
+		#fn = self.date.replace("/","-").replace(":", "-") + "___" + str(time.time())
 
-		f = open("Data/Received_SMS/msg_" + fn + ".txt", "w+")
-		f.write(self.date + "\n")
-		f.write(self.number + "\n")
-		f.write(self.msg)
-		f.close()
+		print(App.Config.SQL)
+		App.Config.SQL.execute("INSERT INTO sms VALUES (null, ?, ?, ?)", (self.number , self.msg , self.date))
+
+		#f = open("Data/Received_SMS/msg_" + fn + ".txt", "w+")
+		#f.write(self.date + "\n")
+		#f.write(self.number + "\n")
+		#f.write(self.msg)
+		#f.close()
 
 		self.manager()
 	def manager(self):

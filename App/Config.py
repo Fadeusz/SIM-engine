@@ -7,3 +7,4 @@ WebSocket = {
 ToneDialing = {}
 Current_Caller = 0
 Micro = None
+SQL = None
