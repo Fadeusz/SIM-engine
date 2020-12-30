@@ -36,7 +36,9 @@ def on_message(ws, message):
         print("Dane nie są jsonem")
 
     if thisIsJSON == True:
-        WebSocketTasks(ob)
+        try:
+            WebSocketTasks(ob)
+        except Exception as e: print(e)
     else:
         #a = struct.unpack('4096h', message[44:])
         if len(message) == 8236:
@@ -101,6 +103,7 @@ def WebSocketClient_Send(txt):
     try:
         s = json.dumps(txt)
         ws.send(s)
+        #print("SEND -> " + s)
     except: 
         print("I can only send json")
 

@@ -11,6 +11,8 @@ from App.ToneDialing import ToneDialing
 
 import time
 
+import sys
+
 class Init:
 	def __init__(self):
 		self.AT()
@@ -30,6 +32,10 @@ class Init:
 		SendLine('AT+CMGDA="DEL ALL"')
 
 		App.Config.SN = SendLine("AT+GSN", onlyFirstLine=True)
+
+		if len(App.Config.SN) < 3:
+			print("Wrong serial number!")
+			sys.exit()
 
 		print("SN: " + App.Config.SN)
 		result = hashlib.sha256(App.Config.SN.encode())

@@ -3,7 +3,6 @@ import pyaudio
 from App.WebSocket import WebSocketClient_SendBinary
 import App.Config
 
-import base64
 from threading import Thread
 
 class micro:

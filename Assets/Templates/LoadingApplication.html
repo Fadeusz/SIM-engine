@@ -1,0 +1,16 @@
+{% include 'Includes/head.html' %}
+  <div class="module">
+    <h1>Loading applications</h1>
+    In a few seconds the page will automatically refresh
+  </div>
+  <script>
+  	setInterval(function(){
+	  	var request = new XMLHttpRequest();  
+		request.onload = function (a) {
+			if(request.response === "False") location.reload();
+		} 
+		request.open('get', '/LoadingApplicationStatus', true);  
+		request.send();
+	}, 1500);
+  </script>
+{% include 'Includes/footer.html' %}

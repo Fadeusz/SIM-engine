@@ -9,9 +9,12 @@ from App.Config import ToneDialing
 import App.Config
 from App.WebSocket import WebSocketClient_Send
 from App.MMS_Received import MMS_Received
+from App.SMS_Send import SMS_Send
+import App.Logs
 
 Received_SMS = False
 Received_MMS = False
+Wait_For_MMS = False
 
 import re
 import PIL.Image as Image
@@ -21,6 +24,7 @@ def ReadSerial(s):
 	global Conversation_Progress
 	global Received_SMS
 	global Received_MMS
+	global Wait_For_MMS
 
 	print("READ:" + s)
 
@@ -32,6 +36,18 @@ def ReadSerial(s):
 	while len(lines)>0:
 		line = lines.pop(0)
 		print("Line: " + line)
+
+		App.Logs.Serial(line)
+
+
+		if Wait_For_MMS:
+			if line.startswith("+CMMSRECV:"):
+				Wait_For_MMS = False
+				while len(App.Config.MMSQueue) > 0: App.Connection.ReadQueue.append(App.Config.MMSQueue.pop(0))
+			else:
+				print("I am already reading another MMS")
+				App.Config.MMSQueue.append(line)
+				continue
 
 		#GPS DATA
 		if line.startswith("+CGNSINF:"): GPS.do_list(line)
@@ -46,18 +62,28 @@ def ReadSerial(s):
 		elif line.startswith("+CUSD:"): USSD.Get(line)
 			
 		#informacja o wyslanym sms
-		elif line.startswith("+CMGS:"): WebSocketClient_Send({"action":"addNotification", "log":"smsSent", "level": "2"})
+		#elif line.startswith("+CMGS:"): WebSocketClient_Send({"action":"addNotification", "log":"smsSent", "level": "2"})
+		elif line.startswith("+CMGS:"): 
+			WebSocketClient_Send({"action":"SmsSentStatus", "status": "3"})
+			SMS_Send.Reset_Time()
+
+		#elif line.startswith("+CMS ERROR:"): WebSocketClient_Send({"action":"addNotification", "log":"smsSentError", "level": "0"})
+		elif line.startswith("+CMS ERROR:"): 
+			WebSocketClient_Send({"action":"SmsSentStatus", "status": "2"})
+			SMS_Send.Reset_Time()
 
 		#przyszedl nowy mms lub sms
 		elif line.startswith("+CMTI:"):
 			l = line.split(",")
-			
+			print("Reading SMS/MMS message...")
 			if len(l) > 2 and "MMS PUSH" in l[2]:
-				SendLine("AT+SAPBR=1,1", False)
+
+				SendLine("AT+SAPBR=1,1")
 				time.sleep(2)
-				SendLine("AT+SAPBR=2,1", False)
+				SendLine("AT+SAPBR=2,1")
 				time.sleep(2)
-				SendLine("AT+CMMSRECV=" + l[1], False)
+				SendLine("AT+CMMSRECV=" + l[1])
+				Wait_For_MMS = True
 			else:
 				SendLine("AT+CMGR=" + l[1], False)
 

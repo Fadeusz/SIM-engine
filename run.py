@@ -2,6 +2,11 @@
 
 print("Loading....")
 
+
+import App.Arguments
+App.Arguments.Init()
+
+
 from multiprocessing import Process
 from threading import Thread
 
@@ -17,9 +22,42 @@ import App.Config
 #WSLoop.start()
 #WS.Send("TESTOWE")
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+
+
+import os
+
+def webStart():
+	try:
+		app.run(debug=False, host='0.0.0.0', port=App.Arguments.args.webport)
+	except:
+		print(bcolors.FAIL + "WebServer problem, on port: " + str(App.Arguments.args.webport))
+		os._exit(0)
+
+wstart = Thread(target=webStart)
+wstart.start()
+
+
+
+
+from App.SQL import SQL
+App.Config.SQL = SQL()
+
 from App.Init import Init
 
 I = Init()
+
+App.Config.LoadingApplication = False
 
 from App.loop import Loop
 SerialLoop = Thread(target=Loop)
@@ -32,5 +70,5 @@ App.Config.Micro = micro()
 
 #WebSocketClient_Send("testowe xd")
 
-if __name__ == '__main__':
-	app.run(debug=False, host='0.0.0.0', port=8025)
+#if __name__ == '__main__':
+	#app.run(debug=False, host='0.0.0.0', port=8025)

@@ -1,0 +1,36 @@
+{% include 'Includes/head.html' %}
+  <div class="module" style="width:100%; height:100%">
+    <h1>Serial Logs</h1>
+    
+
+    <textarea id='logs' rows=50 cols=60 autofocus readonly style="width:100%; height:120%"></textarea>
+
+  </div>
+
+  <script>
+  	var sub = 0;
+  	var alltext = "";
+
+  	function get_logs () {
+  		var request = new XMLHttpRequest();  
+		request.onload = function (a) {
+			var d = request.response;
+			b = d.match(/([0-9]+)>>>/);
+			d = d.replace(b[0], '');
+			sub = b[1];
+			console.log(sub, d);
+			alltext += d;
+
+			document.getElementById("logs").value = alltext;
+			document.getElementById("logs").scrollTop = document.getElementById("logs").scrollHeight
+
+			setTimeout(get_logs, 1000);
+		}
+		request.open('get', '/serial_logs_file/' + sub, true);  
+		request.send();
+  	}
+
+  	get_logs();
+
+  </script>
+{% include 'Includes/footer.html' %}

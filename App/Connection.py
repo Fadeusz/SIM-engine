@@ -10,7 +10,22 @@ SendLineInProgress = False
 
 ReadQueue = []
 
+def ReadToQueue():
+	s = ""
+	while 1:
+		ch = ser.read();
+		if len(ch) == 0:
+			break
+		s += ch.decode()
+	
+	if len(s) > 0:
+		print("Append to queue: '" + s + "'")
+		ReadQueue.append(s)
+
 def SendLine(line, wait = True, onlyFirstLine=False, arrBytes=False, arrBytesLength=0, skipChars=[]):
+	
+	ReadToQueue()
+
 	global SendLineInProgress
 	ser.write(str.encode(line + "\r"))
 	s = ""

@@ -1,7 +1,9 @@
 import uuid
 from App.Connection import SendLine
 import App.Config
-
+import time
+import base64
+import math
 
 class MMS_Received:
 	def __init__(self, line):
@@ -9,6 +11,7 @@ class MMS_Received:
 		l = line.split('"')
 		self.number = l[1]
 		self.date = l[3]
+		self.time = int(time.time())
 		self.unique = str(uuid.uuid4())
 
 	def add_file(self, line):
@@ -39,6 +42,29 @@ class MMS_Received:
 
 			#newFile = open("Data/" + file_name, "wb")
 			#newFile.write(img)
-			App.Config.SQL.execute("INSERT INTO mms VALUES (null, ?, ?, ?, ?, ?, ?)", (self.number , self.date , self.unique , img , file_type , file_name))
+			App.Config.SQL.execute("INSERT INTO mms VALUES (null, ?, ?, ?, ?, ?, ?, ?)", (self.number , self.date , self.time , self.unique , img , file_type , file_name))
+
+			#time.sleep(1)
+
+			if file_type == "4":
+				img = img.encode('utf-8')
+			
+			file = base64.b64encode(img).decode()
+
+			n = 10000
+			parts = math.ceil(len(file) / n)
+			for i in range(0, len(file), n):
+				#time.sleep(1)
+				d = {
+					"number": self.number,
+					"date": self.date,
+					"time": self.time,
+					"unique_id": self.unique,
+					"file": file[i:i+n],
+					"file_type": file_type,
+					"file_name": file_name
+				}
+				App.WebSocket.WebSocketClient_Send({"action":"MMS_Received", "ob": d, "part": int(i/n), "parts": parts})
+
 			print("MMS saved.")
 

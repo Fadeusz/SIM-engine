@@ -1,3 +1,4 @@
+VERSION = "Beta_0.1"
 Controller = None
 SN = None
 unique_id = ""
@@ -8,3 +9,5 @@ ToneDialing = {}
 Current_Caller = 0
 Micro = None
 SQL = None
+MMSQueue = []
+LoadingApplication = True

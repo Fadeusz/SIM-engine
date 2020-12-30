@@ -8,22 +8,28 @@ import App.Config
 
 import time
 
+from App.WebSocket import WebSocketClient_Send
+
 def Loop():
 
-	App.Config.SQL = SQL()
-
-	print(App.Config.SQL)
+	#App.Config.SQL = SQL()
 
 
 	print("Loop Started!")
 	while 1:
 		s=""
 
-		if len(SMS_Send.queue) > 0:
-			SMS_Send.send_first()
+		if len(SMS_Send.queue) > 0 and SMS_Send.Ready_For_Next_SMS():
+			ar = SMS_Send.send_first()
+			App.WebSocket.WebSocketClient_Send({"action":"SmsSentStatus", "status": "1", "ar":ar})
 
 		if len(MMS_Send.queue) > 0:
 			MMS_Send.send_first()
+
+		if len(App.Connection.ReadQueue) > 0:
+			print("Using ReadQueue pop.")
+			ReadSerial(App.Connection.ReadQueue.pop(0))
+			continue
 
 		while 1:
 

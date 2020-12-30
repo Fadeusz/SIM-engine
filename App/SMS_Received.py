@@ -21,6 +21,7 @@ class SMS_Received:
 		data = line.split('"')
 		self.number = UTF16.decode(data[3].strip())
 		self.date = data[7].replace("'", "")
+		self.time = int(time.time())
 	def add_line(self, line):
 		print("SMS LINE: " + line)
 		self.msg += UTF16.decode(line.strip())
@@ -38,8 +39,12 @@ class SMS_Received:
 
 		#fn = self.date.replace("/","-").replace(":", "-") + "___" + str(time.time())
 
-		print(App.Config.SQL)
-		App.Config.SQL.execute("INSERT INTO sms VALUES (null, ?, ?, ?)", (self.number , self.msg , self.date))
+		
+		App.Config.SQL.execute("INSERT INTO sms VALUES (null, ?, ?, ?, ?)", (self.number , self.msg , self.date, self.time))
+		
+		App.WebSocket.WebSocketClient_Send({"action":"SMS_Received", "ob": [self.number , self.msg , self.date, self.time]})
+
+		
 
 		#f = open("Data/Received_SMS/msg_" + fn + ".txt", "w+")
 		#f.write(self.date + "\n")

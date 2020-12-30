@@ -14,10 +14,18 @@ app = Flask(__name__, template_folder='../Assets/Templates')
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+	if App.Config.LoadingApplication: return render_template('LoadingApplication.html')
+
+	return render_template('index.html')
+
+@app.route('/LoadingApplicationStatus')
+def LoadingApplicationStatus():
+	return str(App.Config.LoadingApplication)
 
 @app.route('/send_sms', methods = ['GET', 'POST'])
 def send_sms():
+	if App.Config.LoadingApplication: return render_template('LoadingApplication.html')
+
 	if request.method == 'POST':
 		SMS_Send.add_to_queue(request.form['number'], request.form['text'])
 		return render_template('blank.html', text="Your SMS has been added to the queue")
@@ -28,6 +36,8 @@ def send_sms():
 
 @app.route('/send_mms', methods = ['GET', 'POST'])
 def send_mms():
+	if App.Config.LoadingApplication: return render_template('LoadingApplication.html')
+
 	if request.method == 'POST':
 		#SMS_Send.add_to_queue(request.form['number'], request.form['text'])
 		if request.files:
@@ -45,6 +55,8 @@ def send_mms():
 
 @app.route('/configure_controller', methods = ['GET', 'POST'])
 def configure_controller():
+	if App.Config.LoadingApplication: return render_template('LoadingApplication.html')
+
 	if request.method == 'POST':
 		#App.Config.Controller = Controller_Configuration()
 		App.Config.Controller.SetNewData(request.form["address"], request.form["email"], request.form["password"])
@@ -56,14 +68,46 @@ def configure_controller():
 
 @app.route('/main.js')
 def main_js():
+	if App.Config.LoadingApplication: return render_template('LoadingApplication.html')
+
 	return render_template('main.js')
 
 
 @app.route('/set_controller_configuration')
 def set_controller_configuration():
+	if App.Config.LoadingApplication: return render_template('LoadingApplication.html')
+
 	return App.Config.Controller.Login()
 
 
 @app.route('/get_controller_status')
 def get_controller_status():
+	if App.Config.LoadingApplication: return render_template('LoadingApplication.html')
+
 	return App.Config.Controller.UpdateStatus()
+
+
+@app.route('/serial_logs')
+def serial_logs():
+	if App.Config.LoadingApplication: return render_template('LoadingApplication.html')
+
+	return render_template('serial_logs.html')
+
+@app.route('/serial_logs_file/<sub>')
+def serial_logs_file(sub):
+	#if App.Config.LoadingApplication: return ""
+
+	try:
+		sub = int(sub)
+		with open('Logs/Serial.txt') as f:
+			data = f.read()
+			l = len(data)
+
+			if l < sub:
+				sub = 0
+
+
+			return str(l) + ">>>" + data[sub:l]
+
+	except:
+	  	return "0>>>[!] Read File Error...\n\r"
