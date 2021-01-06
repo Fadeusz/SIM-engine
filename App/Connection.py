@@ -2,13 +2,33 @@ import serial
 
 import time
 
-SERIAL_PORT = "/dev/ttyS0"
+from threading import Timer
+#from multiprocessing import Process
 
-ser = serial.Serial(SERIAL_PORT, baudrate = 115200, timeout = 0.5)
+#SERIAL_PORT = "/dev/ttyS0"
+SERIAL_PORT = ""
+ser = None
 
 SendLineInProgress = False
 
 ReadQueue = []
+
+
+global threadInProgress
+
+def InitSerial(sp):
+	global SERIAL_PORT
+	global ser
+	print("Serial PORT: " + sp)
+	SERIAL_PORT = sp
+
+	try:
+		ser = serial.Serial(SERIAL_PORT, baudrate = 115200, timeout = 0.5)
+		return True
+	except:
+		print('\033[91m' + "[!] Stopped! Wrong serial port!" + '\033[0m')
+		return False
+
 
 def ReadToQueue():
 	s = ""
@@ -22,12 +42,33 @@ def ReadToQueue():
 		print("Append to queue: '" + s + "'")
 		ReadQueue.append(s)
 
-def SendLine(line, wait = True, onlyFirstLine=False, arrBytes=False, arrBytesLength=0, skipChars=[]):
+def SendLine(line, wait = True, onlyFirstLine=False, arrBytes=False, arrBytesLength=0, skipChars=[], timeout=0):
+	
 	
 	ReadToQueue()
+	
 
 	global SendLineInProgress
-	ser.write(str.encode(line + "\r"))
+
+
+	if timeout > 0:
+
+		def writeInThread():
+			ser.write(str.encode(line + "\r"))
+
+		r = Timer(0.1, writeInThread)
+		r.start()
+
+		time.sleep(timeout)
+
+		if r.is_alive():
+			r.cancel()
+			return "!TIMEOUT!"
+
+	else:
+		ser.write(str.encode(line + "\r"))
+
+
 	s = ""
 	bts = bytearray()
 	bts_l = 0
@@ -37,13 +78,15 @@ def SendLine(line, wait = True, onlyFirstLine=False, arrBytes=False, arrBytesLen
 	previousChar = 0
 	StopBuffer = False
 
+	
 	if(wait == True):
 		SendLineInProgress = True
 		if arrBytes:
 			time.sleep(3)
 
 		while 1:
-			ch = ser.read();
+			
+			ch = ser.read();0
 			#print(">" + str(ch) + "<")
 			#print(ord(ch))
 			#if len(ch) == 0 or ch == "" or ch == "\n" or ord(ch) == 10:

@@ -3,6 +3,18 @@
 print("Loading....")
 
 
+import signal
+import sys
+import os
+
+def signal_handler(sig, frame):
+    print('You pressed Ctrl+C!')
+    os._exit(0)
+signal.signal(signal.SIGINT, signal_handler)
+print('Press Ctrl+C if you can close program')
+
+
+
 import App.Arguments
 App.Arguments.Init()
 
@@ -34,9 +46,6 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
-
-import os
-
 def webStart():
 	try:
 		app.run(debug=False, host='0.0.0.0', port=App.Arguments.args.webport)
@@ -57,16 +66,21 @@ from App.Init import Init
 
 I = Init()
 
-App.Config.LoadingApplication = False
+if I.res == True:
 
-from App.loop import Loop
-SerialLoop = Thread(target=Loop)
-SerialLoop.start()
+    App.Config.LoadingApplication = False
 
+    from App.loop import Loop
+    SerialLoop = Thread(target=Loop)
+    SerialLoop.start()
 
-from App.Microphone import micro
-App.Config.Micro = micro()
+    from App.Microphone import micro
+    App.Config.Micro = micro()
 
+else:
+    App.Config.ATInitProblem = True
+    print("Go to:")
+    print("        http://192.168.1.18:8025/system_configuration")
 
 #WebSocketClient_Send("testowe xd")
 

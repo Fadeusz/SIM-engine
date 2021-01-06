@@ -11,3 +11,5 @@ Micro = None
 SQL = None
 MMSQueue = []
 LoadingApplication = True
+ATInitProblem = False
+System_Configuration = {}

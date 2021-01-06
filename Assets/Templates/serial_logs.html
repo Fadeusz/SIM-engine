@@ -18,11 +18,14 @@
 			b = d.match(/([0-9]+)>>>/);
 			d = d.replace(b[0], '');
 			sub = b[1];
-			console.log(sub, d);
-			alltext += d;
 
-			document.getElementById("logs").value = alltext;
-			document.getElementById("logs").scrollTop = document.getElementById("logs").scrollHeight
+			if(d.length > 0) {
+				console.log(sub, d);
+				alltext += d;
+
+				document.getElementById("logs").value = alltext;
+				document.getElementById("logs").scrollTop = document.getElementById("logs").scrollHeight
+			}
 
 			setTimeout(get_logs, 1000);
 		}

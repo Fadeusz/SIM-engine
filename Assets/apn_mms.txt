@@ -1,0 +1,2 @@
+Orange PL;mms.orange.pl;192.168.6.104;8080;mms
+T-mobile PL;mms/servlets/mms;213.158.194.226;8080;mms

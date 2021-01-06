@@ -12,5 +12,13 @@
 		request.open('get', '/LoadingApplicationStatus', true);  
 		request.send();
 	}, 1500);
+	setInterval(function(){
+	  	var request = new XMLHttpRequest();  
+		request.onload = function (a) {
+			if(request.response === "True") location.reload();
+		} 
+		request.open('get', '/ATInitCheck', true);  
+		request.send();
+	}, 1500);
   </script>
 {% include 'Includes/footer.html' %}

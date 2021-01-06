@@ -1,4 +1,4 @@
-from App.Connection import SendLine
+from App.Connection import SendLine, InitSerial
 import App.Config
 
 from App.Controller_Configuration import Controller_Configuration
@@ -13,10 +13,35 @@ import time
 
 import sys
 
+
 class Init:
 	def __init__(self):
-		self.AT()
-		self.Config()
+
+		self.res = self.LoadSystemConfig()
+
+		if self.res == True:
+			self.res = self.AT()
+
+			if self.res == True:
+				self.Config()
+			
+
+	def LoadSystemConfig(self):
+
+		try:
+			f = open("Config/System_Configuration.json", "r")
+			sc = io.StringIO(f.read())
+			SC = App.Config.System_Configuration = json.load(sc)
+			f.close()
+		except:
+			return False
+		
+		App.Config.url_mms_center = SC["url_mms_center"]
+		App.Config.ip_mms_proxy = SC["ip_mms_proxy"]
+		App.Config.port_mms_proxy = SC["port_mms_proxy"]
+		App.Config.apn_name = SC["apn_name"]
+
+		return InitSerial(App.Config.System_Configuration["serial_port"])
 
 	def AT(self):
 
@@ -24,7 +49,11 @@ class Init:
 
 		print("Configuration is in progress")
 
-		SendLine("AT") #Connect
+		AT_STATUS = SendLine("AT", onlyFirstLine=True, timeout=3) #Connect
+		print("AT_STATUS:")
+		if AT_STATUS != "OK":
+			return False
+
 
 		SendLine("AT+CMEE=2") #show errors
 
@@ -64,18 +93,20 @@ class Init:
 		#MMS
 		SendLine('AT+CMMSINIT')
 		time.sleep(1)
-		SendLine('AT+CMMSCURL="mms.orange.pl"')
+		SendLine('AT+CMMSCURL="'+App.Config.url_mms_center+'"')
 		time.sleep(1)
 		SendLine('AT+CMMSCID=1')
 		time.sleep(1)
-		SendLine('AT+CMMSPROTO="192.168.6.104",8080')
+		SendLine('AT+CMMSPROTO="'+App.Config.ip_mms_proxy+'",'+App.Config.port_mms_proxy)
 		time.sleep(1)
 		SendLine('AT+SAPBR=3,1,"Contype","GPRS"')
 		time.sleep(1)
-		SendLine('AT+SAPBR=3,1,"APN","mms"')
+		SendLine('AT+SAPBR=3,1,"APN","'+App.Config.apn_name+'"')
 
 
 		print("Engine is READY")
+
+		return True
 
 
 	def Config(self):

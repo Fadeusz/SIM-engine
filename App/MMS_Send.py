@@ -1,21 +1,22 @@
 import time
 
 from App.Connection import SendLine, Write
+import App.Config
 
 class MMS_Send:
 	@staticmethod
 	def Send(number, att):
 		SendLine('AT+CMMSINIT')
 		time.sleep(1)
-		SendLine('AT+CMMSCURL="mms.orange.pl"')
+		SendLine('AT+CMMSCURL="'+App.Config.url_mms_center+'"')
 		time.sleep(1)
 		SendLine('AT+CMMSCID=1')
 		time.sleep(1)
-		SendLine('AT+CMMSPROTO="192.168.6.104",8080')
+		SendLine('AT+CMMSPROTO="'+App.Config.ip_mms_proxy+'",'+App.Config.port_mms_proxy)
 		time.sleep(1)
 		SendLine('AT+SAPBR=3,1,"Contype","GPRS"')
 		time.sleep(1)
-		SendLine('AT+SAPBR=3,1,"APN","mms"')
+		SendLine('AT+SAPBR=3,1,"APN","'+App.Config.apn_name+'"')
 		time.sleep(1)
 		SendLine('AT+SAPBR=1,1')
 		time.sleep(1)

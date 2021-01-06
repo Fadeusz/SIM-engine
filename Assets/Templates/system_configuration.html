@@ -1,0 +1,97 @@
+{% include 'Includes/head.html' %}
+  <div class="module">
+    <h1>System Configuration (TODO)</h1>
+    
+    <form class="form" action="/system_configuration" method="post" enctype="multipart/form-data" autocomplete="off">
+      <span style="color:red">
+      {% if ATInitProblem == "True" %}
+        <div class="alert alert-error">There was a problem when launching AT commands. Make sure that your overlay is enabled and the SERIAL port is correct. Select it from the list below and check the effect.</div>
+      {% endif %}
+      </span>
+
+      <hr><br>
+      <h2>Serial Configuration</h2>
+      <br>
+      
+      <!-- 
+      <label for="serial_port">Serial Port</label>
+      <select name="serial_port">
+        {% for port in SerialPorts %}
+        <option value="volvo">{{port}}</option>
+        {% endfor %}
+      </select> -->
+
+      <script>
+        function hideOtherInputSerial () {
+          document.getElementById("other_serial_port").style.display = "none";
+        }
+        function showOtherInputSerial () {
+          document.getElementById("other_serial_port").style.display = "block";
+        }
+
+
+        function changeInputsAPN (fname, url, ip, port, name) {
+          console.log(arguments);
+          document.getElementById("friendly_apn_name").value = fname;
+          document.getElementById("url_mms_center").value = url;
+          document.getElementById("ip_mms_proxy").value = ip;
+          document.getElementById("port_mms_proxy").value = port;
+          document.getElementById("apn_name").value = name;
+
+        }
+      </script>
+
+      <h3>Select Serial Port</h3>
+
+      {% set ns = namespace (standard_serial = 0) %}
+ 
+      {% for port in SerialPorts %}
+            <br><label><input {% if System_Configuration['serial_port'] == port %} checked {% endif %} value="{{port}}" type="radio" name="serial_port" onclick="hideOtherInputSerial()"> {{port}}</label>
+            {% if System_Configuration['serial_port'] == port %} 
+                  {% set ns.standard_serial = 1 %}
+            {% endif %}
+      {% endfor %}
+ 
+      <br><label><input {% if ns.standard_serial == 0 %} checked {% endif %} value="other" type="radio" name="serial_port" onclick="showOtherInputSerial()"> Other...</label>
+      <input value="{{System_Configuration['serial_port']}}" type="text" placeholder="Type Serial Port" name="other_serial_port" id="other_serial_port" style="{% if ns.standard_serial == 1 %} display:none {% endif %}" />
+
+      
+
+      <br><br><hr><br>
+      <h2>MMS Configuration</h2>
+      <br>
+
+      {% for apn_conf in MMS_APN_Configurations %}
+        {% if apn_conf[0] != '' %}
+        <br><label><input value="{{port}}" type="radio" name="apn_config" onclick="changeInputsAPN('{{apn_conf[0]}}','{{apn_conf[1]}}','{{apn_conf[2]}}','{{apn_conf[3]}}','{{apn_conf[4]}}')"> {{apn_conf[0]}}</label>
+        {% endif %}
+      {% endfor %}
+      <br><label><input value="{{port}}" type="radio" name="apn_config" onclick="changeInputsAPN('', '', '', '', '')"> Own APN....</label>
+
+      <br><br>
+
+      <label for="url_mms_center">Friendly Name</label>
+      <input type="text" placeholder="Your APN Name" name="friendly_apn_name" id="friendly_apn_name" required />
+      <br>
+
+      <label for="url_mms_center">URL MMS Center</label>
+      <input type="text" placeholder="URL MMS Center" name="url_mms_center" id="url_mms_center" required />
+      <br>
+
+      <label for="ip_mms_proxy">IP MMS Proxy</label>
+      <input type="text" placeholder="IP MMS Proxy" name="ip_mms_proxy" id="ip_mms_proxy" required />
+      <br>
+
+      <label for="port_mms_proxy">PORT MMS Proxy</label>
+      <input type="text" placeholder="PORT MMS Proxy" name="port_mms_proxy" id="port_mms_proxy" required />
+      <br>
+
+      <label for="apn_name">APN Name</label>
+      <input type="text" placeholder="APN Name" name="apn_name" id="apn_name" required />
+
+      <hr><br>
+
+      <input type="submit" value="Save Configuration" name="register" class="btn btn-block btn-primary" />
+    </form>
+  </div>
+{% include 'Includes/footer.html' %}

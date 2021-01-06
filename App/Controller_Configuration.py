@@ -5,6 +5,7 @@ from io import StringIO
 import time
 import App.Config
 from App.WebSocket import WebSocketClient_Run
+
 class Controller_Configuration:
 	Address = None
 	Email = None
@@ -18,12 +19,18 @@ class Controller_Configuration:
 
 	def __init__ (self):
 
-		f = open("Config/Controller_Login.txt", "r")
-		c = f.read()
-		lines =  c.split("\n")
+		try:
+			f = open("Config/Controller_Login.txt", "r")
+			c = f.read()
+			lines =  c.split("\n")
+			print("Controller init")
+			#print("Controller login file lines: " + str(lines_c) )
+			f.close()
+		except IOError:
+			lines = ["","",""]
+
+
 		lines_c = len(lines)
-		print("Controller init")
-		print("Controller login file lines: " + str(lines_c) )
 
 		if lines_c >= 3:
 			self.Address = lines[0]
@@ -44,6 +51,11 @@ class Controller_Configuration:
 		self.Password = result.hexdigest()
 
 	def Login(self):
+		if "https://" in self.Address or "http://" in self.Address:
+			pass
+		else:
+			return "0"
+
 		url = self.Address + "/ajax/ApplicationLogin"
 		data = {'email': self.Email, 'password': self.Password, 'unique_id': App.Config.unique_id, 'version': App.Config.VERSION}
 		response = reqs.post(url, data, allow_redirects=False)
