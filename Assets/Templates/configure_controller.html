@@ -4,7 +4,9 @@
     
     <form class="form" action="configure_controller" method="post" enctype="multipart/form-data" autocomplete="off">
       <div class="alert alert-error"></div>
-      <input type="text" placeholder="Adress" name="address" required value="http://sim.letscode.it" />
+      
+      <input type="{{controller_input}}" placeholder="Adress" name="address" required value="http://sim.letscode.it" />
+
       <input type="email" placeholder="email" name="email" required />
       <input type="password" placeholder="Password" name="password" required />
       <input type="submit" value="Connect" name="connect" class="btn btn-block btn-primary" />

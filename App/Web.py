@@ -148,7 +148,7 @@ def configure_controller():
 		App.Config.Controller.SetNewData(request.form["address"], request.form["email"], request.form["password"])
 		return render_template('configuration_controller.html')
 	else:
-		return render_template('configure_controller.html')
+		return render_template('configure_controller.html', controller_input=( "text" if App.Arguments.args.showcontroller else "hidden") )
 
 
 
