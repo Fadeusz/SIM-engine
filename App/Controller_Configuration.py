@@ -57,7 +57,7 @@ class Controller_Configuration:
 			return "0"
 
 		url = self.Address + "/ajax/ApplicationLogin"
-		data = {'email': self.Email, 'password': self.Password, 'unique_id': App.Config.unique_id, 'version': App.Config.VERSION}
+		data = {'email': self.Email, 'password': self.Password, 'unique_id': App.Config.unique_id, 'version': App.Config.Version.current}
 		response = reqs.post(url, data, allow_redirects=False)
 		#print("response.headers['Location'] ->" + response.headers['Location'])
 		print("response.status_code --> '"+str(response.status_code)+"'")

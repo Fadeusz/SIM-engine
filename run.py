@@ -13,8 +13,6 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 print('Press Ctrl+C if you can close program')
 
-
-
 import App.Arguments
 App.Arguments.Init()
 
@@ -27,6 +25,9 @@ from App.Web import app
 from App.WebSocket import WebSocketClient_Run, WebSocketClient_Stop, WebSocketClient_Send
 
 import App.Config
+
+from App.Version import Version
+App.Config.Version = Version()
 
 #App.Config.WebSocket = {"url":"ws://srv01.letscode.it:8031/"}
 

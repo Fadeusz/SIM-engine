@@ -86,7 +86,7 @@ def SendLine(line, wait = True, onlyFirstLine=False, arrBytes=False, arrBytesLen
 
 		while 1:
 			
-			ch = ser.read();0
+			ch = ser.read()
 			#print(">" + str(ch) + "<")
 			#print(ord(ch))
 			#if len(ch) == 0 or ch == "" or ch == "\n" or ord(ch) == 10:

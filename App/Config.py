@@ -1,4 +1,3 @@
-VERSION = "Beta_0.1"
 Controller = None
 SN = None
 unique_id = ""
@@ -13,3 +12,4 @@ MMSQueue = []
 LoadingApplication = True
 ATInitProblem = False
 System_Configuration = {}
+Version = None

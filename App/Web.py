@@ -47,7 +47,7 @@ def index():
 	if App.Config.ATInitProblem: return get_system_configuration_tpl()
 	if App.Config.LoadingApplication: return render_template('LoadingApplication.html')
 
-	return render_template('index.html')
+	return render_template('index.html', version=App.Config.Version)
 
 @app.route('/LoadingApplicationStatus')
 def LoadingApplicationStatus():
